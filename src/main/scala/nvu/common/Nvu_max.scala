@@ -5,7 +5,7 @@ import spinal.lib._
 
 case class Nvu_max (elem_nums: Int) extends Component {
   val io = new Bundle {
-    val x_i = in Vec(SInt(Nvu_params.DATA_WIDTH bits), Nvu_params.ELEM_NUMS)
+    val x_i = in Vec(SInt(Nvu_params.DATA_WIDTH bits), elem_nums)
     val y_i = out SInt(Nvu_params.DATA_WIDTH bits)
   }
 

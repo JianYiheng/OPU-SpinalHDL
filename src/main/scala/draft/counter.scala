@@ -5,8 +5,6 @@ import scala.util.Random
 import scala.math
 
 import spinal.core.sim._
-import spinal.core.SpinalConfig
-import spinal.core.sim.SimConfig
 
 import scala.collection.mutable.Stack
 

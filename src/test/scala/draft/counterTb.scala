@@ -12,8 +12,6 @@ import scala.collection.mutable.Stack
 
 //Run this scala test to generate and check that your RTL work correctly
 class CounterTester extends FunSuite {
-  var compiled: SimCompiled[CounterTb] = null
-
   test("testbench") {
     SimConfig.withWave.withConfig(SpinalConfig(targetDirectory = "rtl")).workspacePath("waves").compile(new CounterTb(width=4)).doSim{ dut =>
       dut.init()

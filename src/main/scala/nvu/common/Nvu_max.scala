@@ -3,6 +3,12 @@ package nvu.common
 import spinal.core._
 import spinal.lib._
 
+import spinal.core.sim._
+
+import scala.util.Random
+import scala.math
+import scala.collection.mutable.Stack 
+
 case class Nvu_max (elem_nums: Int) extends Component {
   val io = new Bundle {
     val x_i = in Vec(SInt(Nvu_params.DATA_WIDTH bits), elem_nums)
@@ -35,8 +41,47 @@ case class Nvu_max (elem_nums: Int) extends Component {
   }
 }
 
+class Nvu_max_tb(elem_nums: Int) extends Nvu_max(elem_nums) {
+  def init() {
+    clockDomain.forkStimulus(10)
+    for (i <- 0 until elem_nums) {
+      io.x_i(i) #= 0
+    }
+    clockDomain.waitSampling()
+  }
+
+  def source (): Stack[Array[Int]] = {
+    val src: Stack[Array[Int]] = Stack()
+    for (_ <- 0 until 100) {
+      val src_ary = Seq.fill(elem_nums)(Random.nextInt(math.pow(2, Nvu_params.DATA_WIDTH-1).toInt-1)).toArray
+      src.push(src_ary)
+    }
+
+    return src
+  }
+
+  def driver (src: Stack[Array[Int]]) {
+    while(src.length>0) {
+      val src_ary = src.pop()
+      for (i <- 0 until src_ary.length) {
+        io.x_i(i) #= src_ary(i)
+      }
+      clockDomain.waitSampling()
+    }
+  }
+
+  def checker (src: Stack[Array[Int]]) {
+    clockDomain.waitSampling ()
+    while (src.length>0) {
+      val src_ary = src.pop()
+      clockDomain.waitSampling()
+      assert(io.y_i.toInt == src_ary.max, "y_i: $(io.y_i.toInt), max: ${src_ary.max}")
+    }
+  }
+}
+
 object Nvu_max_main{
   def main(args: Array[String]) {
-    SpinalConfig(targetDirectory = "rtl").generateVerilog(Nvu_max(elem_nums=16))
+    SpinalConfig(targetDirectory = "rtl").generateVerilog(Nvu_max(elem_nums=8))
   }
 }

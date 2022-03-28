@@ -1,11 +1,12 @@
 package draft
 
 import spinal.core._
-import scala.util.Random
-import scala.math
+import spinal.lib._
 
 import spinal.core.sim._
 
+import scala.util.Random
+import scala.math
 import scala.collection.mutable.Stack
 
 case class Counter(width: Int) extends Component {
@@ -13,6 +14,8 @@ case class Counter(width: Int) extends Component {
     val x_i = in UInt(width bits)
     val y_i = out UInt(width bits)
   }
+
+  noIoPrefix()
 
   io.y_i := RegNext(io.x_i)
 

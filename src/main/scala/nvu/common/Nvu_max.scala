@@ -15,8 +15,8 @@ case class Nvu_max (elem_nums: Int) extends Component {
     val y_i = out SInt(Nvu_params.DATA_WIDTH bits)
   }
 
-  val x_a = Reg(SInt(Nvu_params.DATA_WIDTH bits))
-  val x_b = Reg(SInt(Nvu_params.DATA_WIDTH bits))
+  val x_a = Reg(SInt(Nvu_params.DATA_WIDTH bits)) init(0)
+  val x_b = Reg(SInt(Nvu_params.DATA_WIDTH bits)) init(0)
 
   if (elem_nums == 2) {
     x_a := io.x_i(0)
@@ -60,23 +60,32 @@ class Nvu_max_tb(elem_nums: Int) extends Nvu_max(elem_nums) {
     return src
   }
 
-  def driver (src: Stack[Array[Int]]) {
-    while(src.length>0) {
-      val src_ary = src.pop()
-      for (i <- 0 until src_ary.length) {
-        io.x_i(i) #= src_ary(i)
-      }
-      clockDomain.waitSampling()
-    }
-  }
+  def driveAndCheck (src: Stack[Array[Int]]) {
+    val src_drv, src_chk = src.clone
 
-  def checker (src: Stack[Array[Int]]) {
-    clockDomain.waitSampling ()
-    while (src.length>0) {
-      val src_ary = src.pop()
-      clockDomain.waitSampling()
-      assert(io.y_i.toInt == src_ary.max, "y_i: $(io.y_i.toInt), max: ${src_ary.max}")
+    val driver_task = fork {
+      while(src_drv.length>0) {
+        val src_ary = src_drv.pop()
+        for (i <- 0 until src_ary.length) {
+          io.x_i(i) #= src_ary(i)
+        }
+        clockDomain.waitSampling()
+      }
     }
+
+    val checker_task = fork {
+      clockDomain.waitSampling (4)
+      while (src_chk.length>0) {
+        val src_ary = src_chk.pop()
+        println(s"y_i: ${io.y_i.toInt}, max: ${src_ary.max}")
+        assert(io.y_i.toInt == src_ary.max, s"y_i: ${io.y_i.toInt}, max: ${src_ary.max}")
+        clockDomain.waitSampling()
+      }
+      simSuccess()
+    }
+
+    driver_task.join()
+    checker_task.join()
   }
 }
 

@@ -11,43 +11,27 @@ import scala.collection.mutable.Stack
 
 case class Nvu_max (elem_nums: Int) extends Component {
   val io = new Bundle {
-    val x_i = in Vec(SInt(Nvu_params.DATA_WIDTH bits), elem_nums)
-    val y_i = out SInt(Nvu_params.DATA_WIDTH bits)
+    val x_vld = in Bool ()
+    val y_vld = out Bool () setAsReg() init(False)
+    val x_i   = in Vec(SInt(Nvu_params.DATA_WIDTH bits), elem_nums)
+    val y_i   = out SInt(Nvu_params.DATA_WIDTH bits) setAsReg() init(0)
   }
 
-  val x_a = Reg(SInt(Nvu_params.DATA_WIDTH bits)) init(0)
-  val x_b = Reg(SInt(Nvu_params.DATA_WIDTH bits)) init(0)
+  noIoPrefix()
 
-  if (elem_nums == 2) {
-    x_a := io.x_i(0)
-    x_b := io.x_i(1)
-  } else {
-    val sub_Nvu_max_a = new Nvu_max (elem_nums=elem_nums/2)
-    val sub_Nvu_max_b = new Nvu_max (elem_nums=elem_nums/2)
+  io.y_i := io.x_i.reduceBalancedTree(Max(_, _),(s,l)=>RegNext(s) init(0))
+  io.y_vld := Delay(io.x_vld, elem_nums/2-1, init=False)
 
-    for (i <- 0 until elem_nums/2) {
-      sub_Nvu_max_a.io.x_i(i) := io.x_i(i)
-      sub_Nvu_max_b.io.x_i(i) := io.x_i(i+elem_nums/2)
-    }
-
-    x_a := sub_Nvu_max_a.io.y_i
-    x_b := sub_Nvu_max_b.io.y_i
-  }
-
-  when (x_a > x_b) {
-    io.y_i := x_a
-  }.otherwise {
-    io.y_i := x_b
-  }
 }
 
 class Nvu_max_tb(elem_nums: Int) extends Nvu_max(elem_nums) {
   def init() {
     clockDomain.forkStimulus(10)
+    io.x_vld #= false
     for (i <- 0 until elem_nums) {
       io.x_i(i) #= 0
     }
-    clockDomain.waitSampling()
+    sleep(100)
   }
 
   def source (): Stack[Array[Int]] = {
@@ -64,21 +48,27 @@ class Nvu_max_tb(elem_nums: Int) extends Nvu_max(elem_nums) {
     val src_drv, src_chk = src.clone
 
     val driver_task = fork {
+      clockDomain.waitSampling(2)
       while(src_drv.length>0) {
-        val src_ary = src_drv.pop()
-        for (i <- 0 until src_ary.length) {
-          io.x_i(i) #= src_ary(i)
+        if (Random.nextFloat() > 0.5) {
+          io.x_vld #= false
+        } else {
+          val src_ary = src_drv.pop()
+          io.x_vld #= true
+          for (i <- 0 until elem_nums) {
+            io.x_i(i) #= src_ary(i)
+          }
         }
         clockDomain.waitSampling()
       }
     }
 
     val checker_task = fork {
-      clockDomain.waitSampling (4)
       while (src_chk.length>0) {
-        val src_ary = src_chk.pop()
-        println(s"y_i: ${io.y_i.toInt}, max: ${src_ary.max}")
-        assert(io.y_i.toInt == src_ary.max, s"y_i: ${io.y_i.toInt}, max: ${src_ary.max}")
+        if (io.y_vld.toBoolean) {
+          val src_ary = src_chk.pop()
+          assert(io.y_i.toInt == src_ary.max, s"y_i: ${io.y_i.toInt}, max: ${src_ary.max}")
+        }
         clockDomain.waitSampling()
       }
       simSuccess()

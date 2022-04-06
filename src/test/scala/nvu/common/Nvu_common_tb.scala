@@ -31,4 +31,12 @@ class Nvu_common_tb extends FunSuite {
       dut.driveAndCheck(src)
     }
   }
+
+  // test("nvu_mean_testbench") {
+  //   nvuSimConfig().compile(new Nvu_mean_tb(elem_nums=8)).doSim { dut =>
+  //     dut.init()
+  //     val src: Stack[Array[Double]] = dut.source()
+  //     dut.driveAndCheck(src)
+  //   }
+  // }
 }

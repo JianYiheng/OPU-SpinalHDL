@@ -1,9 +1,9 @@
-name := "SpinalWorkshop"
+name := "OPU-SpinalHDL"
 
 version := "1.0"
 
 scalaVersion := "2.11.12"
-val spinalVersion = "1.6.4"
+val spinalVersion = "1.6.5"
 
 libraryDependencies ++= Seq(
   "org.scalatest" % "scalatest_2.11" % "2.2.1",

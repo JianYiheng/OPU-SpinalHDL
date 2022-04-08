@@ -15,9 +15,9 @@ case class Nvu_lut() extends Component {
     val x_vld = in Bool()
     val y_vld = out Bool()
 
-    val lut_x = in Vec(SFix(Nvu_params.LUT_X_INTG exp, -Nvu_params.LUT_X_FRAC exp), Nvu_params.LUT_X_LEN)
-    val lut_y = in Vec(SFix(Nvu_params.LUT_Y_INTG exp, -Nvu_params.LUT_Y_FRAC exp), Nvu_params.LUT_Y_LEN)
-    val lut_k = in Vec(SFix(Nvu_params.LUT_K_INTG exp, -Nvu_params.LUT_K_FRAC exp), Nvu_params.LUT_K_LEN)
+    val lut_x = slave(lut_if(Nvu_params.LUT_X_INTG, Nvu_params.LUT_X_FRAC, Nvu_params.LUT_X_LEN))
+    val lut_y = slave(lut_if(Nvu_params.LUT_Y_INTG, Nvu_params.LUT_Y_FRAC, Nvu_params.LUT_Y_LEN))
+    val lut_k = slave(lut_if(Nvu_params.LUT_K_INTG, Nvu_params.LUT_K_FRAC, Nvu_params.LUT_K_LEN))
 
     val x_i   = in SFix(Nvu_params.LUT_IN_INTG exp, -Nvu_params.LUT_IN_FRAC exp)
     val y_i   = out SFix(Nvu_params.LUT_OUT_INTG exp, -Nvu_params.LUT_OUT_FRAC exp)
@@ -40,7 +40,7 @@ case class Nvu_lut() extends Component {
 
   when (io.x_vld) {
     for (i <- 0 until Nvu_params.LUT_X_LEN) {
-      when (io.x_i > io.lut_x(i)) {
+      when (io.x_i > io.lut_x.data(i)) {
         lut_pos_ary(i)  := True
       }.otherwise {
         lut_pos_ary(i)  := False
@@ -49,10 +49,10 @@ case class Nvu_lut() extends Component {
   }
 
   when (Delay(io.x_vld, 1, init=False)) {
-    lut_x_r   := io.lut_x(lut_pos)
-    lut_y_r   := io.lut_y(lut_pos)
-    lut_y_r_1 := io.lut_y(lut_pos+1)
-    lut_k_r   := io.lut_k(lut_pos)
+    lut_x_r   := io.lut_x.data(lut_pos)
+    lut_y_r   := io.lut_y.data(lut_pos)
+    lut_y_r_1 := io.lut_y.data(lut_pos+1)
+    lut_k_r   := io.lut_k.data(lut_pos)
   }.otherwise {
     lut_x_r   := lut_x_r
     lut_y_r   := lut_y_r
@@ -85,12 +85,12 @@ class Nvu_lut_tb extends Nvu_lut {
     val lut_k = List(1.0, 1.0, 1.0, 1.0, 1.0, 1.0).map(FixData(_, SQ(Nvu_params.DATA_WIDTH, Nvu_params.LUT_K_FRAC)).asLong)
 
     for (i <- 0 until Nvu_params.LUT_X_LEN) {
-      io.lut_x(i).raw #= lut_x(i)
-      io.lut_k(i).raw #= lut_k(i)
+      io.lut_x.data(i).raw #= lut_x(i)
+      io.lut_k.data(i).raw #= lut_k(i)
     }
 
     for (i <- 0 until Nvu_params.LUT_Y_LEN) {
-      io.lut_y(i).raw #= lut_y(i)
+      io.lut_y.data(i).raw #= lut_y(i)
     }
     sleep(100)
   }
